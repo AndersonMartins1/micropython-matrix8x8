@@ -1,39 +1,39 @@
+```python
 import pyb
-
 
 class Matrix8x8:
     """
-    Driver for AdaFruit 8x8 LED Matrix display with HT16K33 backpack.
-    Example of use:
+    Ovladač displeje 8x8 LED maticové s HT16K33 přídavným modulem od AdaFruit.
+    Příklad použití:
 
     display = Matrix8x8()
-    display.set(b'\xFF' * 8)    # turn on all LEDs
-    display.clear()             # turn off all LEDs
-    display.set_row(2, 0xFF)    # turn on all LEDs in row 2
-    display.set_column(3, 0xFF) # turn on all LEDs in column 3
-    display.set_pixel(7, 6)     # turn on LED at row 7, column 6
+    display.set(b'\xFF' * 8)    # zapnout všechny LED
+    display.clear()             # vypnout všechny LED
+    display.set_row(2, 0xFF)    # zapnout všechny LED ve 2. řádku
+    display.set_column(3, 0xFF) # zapnout všechny LED ve 3. sloupci
+    display.set_pixel(7, 6)     # zapnout LED na řádku 7, sloupec 6
     """
     row_addr = (0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E)
 
     def __init__(self, i2c_bus=1, addr=0x70, brightness=15, i2c=None):
         """
-        Params:
-        * i2c_bus = I2C bus ID (1 or 2) or None (if param 'i2c' is provided)
-        * addr = I2C address of connected display
-        * brightness = display brightness (0 - 15)
-        * i2c = initialised instance of pyb.I2C object
+        Parametry:
+        * i2c_bus = ID sběrnice I2C (1 nebo 2) nebo None (pokud je zadán parametr 'i2c')
+        * addr = I2C adresa připojeného displeje
+        * brightness = jas displeje (0 - 15)
+        * i2c = inicializovaná instance objektu pyb.I2C
         """
         self._blinking = 0
         self.addr = addr
         self.buf = bytearray(8)
 
-        # I2C init
+        # inicializace I2C
         if i2c:
             self.i2c = i2c
         else:
             self.i2c = pyb.I2C(i2c_bus, pyb.I2C.MASTER, baudrate=400000)
 
-        # set HT16K33 oscillator on
+        # zapnutí oscilátoru HT16K33
         self._send(0x21)
 
         self.set_brightness(brightness)
@@ -42,20 +42,20 @@ class Matrix8x8:
 
     def _send(self, data):
         """
-        Send data over I2C.
+        Odeslat data přes I2C.
         """
         self.i2c.send(data, self.addr)
 
     def _send_row(self, row):
         """
-        Send single row over I2C.
+        Odeslat jednotlivý řádek přes I2C.
         """
         data = bytes((self.row_addr[row], rotate_right(self.buf[row])))
         self._send(data)
 
     def _send_buf(self):
         """
-        Send buffer over I2C.
+        Odeslat buffer přes I2C.
         """
         data = bytearray(16)
         i = 1
@@ -66,7 +66,7 @@ class Matrix8x8:
 
     def _clear_column(self, column):
         """
-        Clear column in buffer (set it to 0).
+        Vymazat sloupec v bufferu (nastavit na 0).
         """
         mask = 0x80 >> column
         for row in range(8):
@@ -75,7 +75,7 @@ class Matrix8x8:
 
     def _set_column(self, column, byte):
         """
-        Set column in buffer by byte.
+        Nastavit sloupec v bufferu pomocí bytu.
         """
         self._clear_column(column)
         if byte == 0:
@@ -91,32 +91,32 @@ class Matrix8x8:
 
     def on(self):
         """
-        Turn on display.
+        Zapnout displej.
         """
         self.is_on = True
         self._send(0x81 | self._blinking << 1)
 
     def off(self):
         """
-        Turn off display. You can controll display when it's off (change image,
-        brightness, blinking, ...).
+        Vypnout displej. Lze ovládat displej, když je vypnutý (změna obrázku,
+        jas, blikání, ...).
         """
         self.is_on = False
         self._send(0x80)
 
     def set_brightness(self, value):
         """
-        Set display brightness. Value from 0 (min) to 15 (max).
+        Nastavit jas displeje. Hodnota od 0 (min) do 15 (max).
         """
         self._send(0xE0 | value)
 
     def set_blinking(self, mode):
         """
-        Set blinking. Modes:
-            0 - blinking off
-            1 - blinking at 2Hz
-            2 - blinking at 1Hz
-            3 - blinking at 0.5Hz
+        Nastavit blikání. Režimy:
+            0 - blikání vypnuto
+            1 - blikání 2 Hz
+            2 - blikání 1 Hz
+            3 - blikání 0.5 Hz
         """
         self._blinking = mode
         if self.is_on:
@@ -124,15 +124,16 @@ class Matrix8x8:
 
     def set(self, bitmap):
         """
-        Show bitmap on display. Bitmap should be 8 bytes/bytearray object or any
-        iterable object containing 8 bytes (one byte per row).
+        Zobrazit bitmapu na displeji. Bitmapa by měla být objekt typu bytearray
+        obsahující 8 bytů nebo jakýkoli iterovatelný objekt obsahující 8 bytů
+        (jeden byte na řádek).
         """
         self.buf = bytearray(bitmap)
         self._send_buf()
 
     def clear(self):
         """
-        Clear display.
+        Vymazat displej.
         """
         for i in range(8):
             self.buf[i] = 0
@@ -140,41 +141,41 @@ class Matrix8x8:
 
     def set_row(self, row, byte):
         """
-        Set row by byte.
+        Nastavit řádek pomocí bytu.
         """
         self.buf[row] = byte
         self._send_row(row)
 
     def clear_row(self, row):
         """
-        Clear row.
+        Vymazat řádek.
         """
         self.set_row(row, 0)
 
     def set_column(self, column, byte):
         """
-        Set column by byte.
+        Nastavit sloupec pomocí bytu.
         """
         self._set_column(column, byte)
         self._send_buf()
 
     def clear_column(self, column):
         """
-        Clear column.
+        Vymazat sloupec.
         """
         self._clear_column(column)
         self._send_buf()
 
     def set_pixel(self, row, column):
         """
-        Set (turn on) pixel.
+        Nastavit (zapnout) pixel.
         """
         self.buf[row] |= (0x80 >> column)
         self._send_row(row)
 
     def clear_pixel(self, row, column):
         """
-        Clear pixel.
+        Vymazat pixel.
         """
         self.buf[row] &= ~(0x80 >> column)
         self._send_row(row)
@@ -182,11 +183,12 @@ class Matrix8x8:
 
 def rotate_right(byte):
     """
-    Rotate bits right.
+    Rotovat bity doprava.
     """
     byte &= 0xFF
     bit = byte & 0x01
     byte >>= 1
-    if(bit):
+    if bit:
         byte |= 0x80
     return byte
+
